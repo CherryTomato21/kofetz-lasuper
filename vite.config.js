@@ -7,26 +7,30 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: 'script', // חובה כדי שהדפדפן ירשום את האפליקציה ברקע
       includeAssets: ['favicon.png', 'icon-192.png', 'icon-512.png'],
       manifest: {
         name: 'קופץ לסופר',
-        short_name: 'קופץ',
-        description: 'רשימת קניות משפחתית ברספונסיביות מלאה',
+        short_name: 'לסופר',
+        description: 'רשימת קניות משפחתית רספונסיבית',
         theme_color: '#121212',
         background_color: '#121212',
         display: 'standalone',
+        start_url: '/', // חובה כדי שכרום יאפשר התקנה
         dir: 'rtl',
         lang: 'he',
         icons: [
           {
             src: '/icon-192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any maskable'
           },
           {
             src: '/icon-512.png',
             sizes: '512x512',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any maskable'
           }
         ]
       }
