@@ -16,9 +16,9 @@ import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
 import { prefixer } from 'stylis';
 import rtlPlugin from 'stylis-plugin-rtl';
-import { 
-  FaCat, FaShoppingCart, FaTrash, FaPlus, FaStar, 
-  FaHistory, FaCamera, FaImage 
+import {
+  FaCat, FaShoppingCart, FaTrash, FaPlus, FaStar,
+  FaHistory, FaCamera, FaImage
 } from 'react-icons/fa';
 import { MdExpandMore } from 'react-icons/md';
 
@@ -50,7 +50,7 @@ export default function App() {
   const [isAddingCustomCategory, setIsAddingCustomCategory] = useState(false);
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [activeTab, setActiveTab] = useState(0);
-  
+
   // מצבי תמונה
   const [imageFile, setImageFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -60,7 +60,7 @@ export default function App() {
     const unsubscribe = onSnapshot(collection(db, 'shopping-list'), (snapshot) => {
       const fetchedItems = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-      
+
       fetchedItems.forEach(async (item) => {
         if (item.bought && item.boughtAt && item.boughtAt < thirtyDaysAgo) {
           await deleteDoc(doc(db, 'shopping-list', item.id));
@@ -100,7 +100,7 @@ export default function App() {
 
     setIsUploading(true);
     const finalCategory = isAddingCustomCategory && customCategory.trim() ? customCategory.trim() : category;
-    
+
     // העלאת תמונה אם יש
     let imageUrl = null;
     if (imageFile) {
@@ -173,6 +173,7 @@ export default function App() {
                       options={historySuggestions}
                       value={itemName}
                       onInputChange={(e, newValue) => setItemName(newValue)}
+                      slotProps={{ listbox: { dir: 'rtl' } }}
                       sx={{ flexGrow: 1 }}
                       renderInput={(params) => (
                         <TextField {...params} label="מה להוסיף לרשימה?" variant="outlined" size="small" required />
@@ -184,7 +185,7 @@ export default function App() {
                       size="small"
                       value={quantity}
                       onChange={(e) => setQuantity(e.target.value)}
-                      inputProps={{ min: 1 }}
+                      slotProps={{ htmlInput: { min: 1 } }}
                       sx={{ width: '70px' }}
                     />
                   </Box>
@@ -193,7 +194,7 @@ export default function App() {
                     {!isAddingCustomCategory ? (
                       <FormControl fullWidth size="small">
                         <InputLabel id="cat-label">קטגוריה</InputLabel>
-                        <Select labelId="cat-label" value={category} label="קטגוריה" onChange={(e) => e.target.value === 'NEW' ? setIsAddingCustomCategory(true) : setCategory(e.target.value)}>
+                        <Select labelId="cat-label" value={category} MenuProps={{ dir: 'rtl' }} label="קטגוריה" onChange={(e) => e.target.value === 'NEW' ? setIsAddingCustomCategory(true) : setCategory(e.target.value)}>
                           {categories.map((cat) => <MenuItem key={cat} value={cat}>{cat}</MenuItem>)}
                           <Divider />
                           <MenuItem value="NEW" sx={{ color: 'primary.main', fontWeight: 'bold' }}>+ קטגוריה חדשה</MenuItem>
@@ -229,10 +230,10 @@ export default function App() {
             <Paper sx={{ mb: 2, borderRadius: 2, bgcolor: '#1e1e1e', border: '1px solid #333' }}>
               <Tabs value={activeTab} onChange={(e, val) => setActiveTab(val)} variant="fullWidth" textColor="primary" indicatorColor="primary">
                 {/* התיקון של העגלה עם המספר יושב כאן */}
-                <Tab 
-                  icon={<Badge badgeContent={activeItems.length} color="primary"><FaShoppingCart size={20} /></Badge>} 
-                  iconPosition="start" 
-                  label="לקנות" 
+                <Tab
+                  icon={<Badge badgeContent={activeItems.length} color="primary"><FaShoppingCart size={20} /></Badge>}
+                  iconPosition="start"
+                  label="לקנות"
                   sx={{ minHeight: '60px' }}
                 />
                 <Tab icon={<FaStar size={18} color="#ffb74d" />} iconPosition="start" label="נפוצים" sx={{ minHeight: '60px' }} />
@@ -259,9 +260,9 @@ export default function App() {
                               <ListItem key={item.id} divider sx={{ display: 'flex', justifyContent: 'space-between', px: 2, py: 1 }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                   <Checkbox edge="start" checked={item.bought} onChange={() => toggleBought(item)} color="secondary" size="small" />
-                                  <ListItemText 
-                                    primary={item.quantity > 1 ? `${item.name} (${item.quantity})` : item.name} 
-                                    primaryTypographyProps={{ fontSize: '1rem' }} 
+                                  <ListItemText
+                                    primary={item.quantity > 1 ? `${item.name} (${item.quantity})` : item.name}
+                                    slotProps={{ primary: { sx: { fontSize: '1rem' } } }}
                                   />
                                 </Box>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -322,7 +323,7 @@ export default function App() {
                 {viewImage && <img src={viewImage} alt="מוצר" style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain' }} />}
               </DialogContent>
             </Dialog>
-            
+
           </Container>
         </Box>
       </ThemeProvider>
