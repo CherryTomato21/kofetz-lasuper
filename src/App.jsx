@@ -16,9 +16,9 @@ import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
 import { prefixer } from 'stylis';
 import rtlPlugin from 'stylis-plugin-rtl';
-import {
-  FaCat, FaShoppingCart, FaTrash, FaPlus, FaStar,
-  FaHistory, FaCamera, FaImage
+import { 
+  FaCat, FaShoppingCart, FaTrash, FaPlus, FaStar, 
+  FaHistory, FaCamera, FaImage 
 } from 'react-icons/fa';
 import { MdExpandMore } from 'react-icons/md';
 
@@ -40,9 +40,10 @@ const theme = createTheme({
 });
 
 const DEFAULT_CATEGORIES = ['ירקות ופירות', 'מוצרי מקרר', 'מעדנייה', 'מוצרים יבשים', 'מוצרים קפואים', 'אחר'];
+const FAMILY_PASSWORD = "תקווה"; // הסיסמה המשפחתית
 
 export default function App() {
-  const FAMILY_PASSWORD = "תקווה"; // הסיסמה
+  // === הגדרות מצב (States) ===
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     // בודק אם כבר התחברנו בעבר באותו טלפון
     return localStorage.getItem('kofetz-logged-in') === 'true';
@@ -63,11 +64,12 @@ export default function App() {
   const [isUploading, setIsUploading] = useState(false);
   const [viewImage, setViewImage] = useState(null); // URL של תמונה להצגה בגדול
 
+  // === סנכרון נתונים (Hooks) ===
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'shopping-list'), (snapshot) => {
       const fetchedItems = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-
+      
       fetchedItems.forEach(async (item) => {
         if (item.bought && item.boughtAt && item.boughtAt < thirtyDaysAgo) {
           await deleteDoc(doc(db, 'shopping-list', item.id));
@@ -100,6 +102,18 @@ export default function App() {
   const historySuggestions = useMemo(() => {
     return Array.from(new Set(items.map((i) => i.name.trim())));
   }, [items]);
+
+  // === פונקציות פעולה ===
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (passwordInput === FAMILY_PASSWORD) {
+      setIsLoggedIn(true);
+      localStorage.setItem('kofetz-logged-in', 'true');
+    } else {
+      setLoginError(true);
+      setPasswordInput('');
+    }
+  };
 
   const handleAddItem = async (e) => {
     if (e) e.preventDefault();
@@ -161,11 +175,12 @@ export default function App() {
   const activeItems = items.filter((i) => !i.bought);
   const boughtItems = items.filter((i) => i.bought);
 
-  // --- מסך הכניסה ---
-  if (!isLoggedIn) {
-    return (
-      <CacheProvider value={cacheRtl}>
-        <ThemeProvider theme={theme}>
+  // === תצוגה מרכזית ===
+  return (
+    <CacheProvider value={cacheRtl}>
+      <ThemeProvider theme={theme}>
+        {!isLoggedIn ? (
+          /* -------- מסך התחברות -------- */
           <Box dir="rtl" sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'background.default', p: 2 }}>
             <Paper elevation={4} sx={{ p: 4, borderRadius: 3, textAlign: 'center', bgcolor: '#1e1e1e', border: '1px solid #333', maxWidth: '400px', width: '100%' }}>
               <FaCat size={40} color="#ffb74d" style={{ marginBottom: '16px' }} />
@@ -193,184 +208,173 @@ export default function App() {
               </form>
             </Paper>
           </Box>
-        </ThemeProvider>
-      </CacheProvider>
-    );
-  }
-  // --- סוף מסך הכניסה ---
+        ) : (
+          /* -------- האפליקציה המרכזית -------- */
+          <Box dir="rtl" sx={{ minHeight: '100vh', bgcolor: 'background.default', color: 'text.primary', py: 3, px: 2 }}>
+            <Container maxWidth="sm">
+              <Paper elevation={2} sx={{ p: 2, mb: 2.5, borderRadius: 3, textAlign: 'center', bgcolor: '#1e1e1e', border: '1px solid #333', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5 }}>
+                <FaCat size={28} color="#ffb74d" />
+                <Typography variant="h5" component="h1" sx={{ fontWeight: 'bold', color: '#ffb74d' }}>קופץ לסופר</Typography>
+              </Paper>
 
-  return (
-    <CacheProvider value={cacheRtl}>
-      <ThemeProvider theme={theme}>
-        <Box dir="rtl" sx={{ minHeight: '100vh', bgcolor: 'background.default', color: 'text.primary', py: 3, px: 2 }}>
-          <Container maxWidth="sm">
-            <Paper elevation={2} sx={{ p: 2, mb: 2.5, borderRadius: 3, textAlign: 'center', bgcolor: '#1e1e1e', border: '1px solid #333', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5 }}>
-              <FaCat size={28} color="#ffb74d" />
-              <Typography variant="h5" component="h1" sx={{ fontWeight: 'bold', color: '#ffb74d' }}>קופץ לסופר</Typography>
-            </Paper>
+              <Paper elevation={2} sx={{ p: 2, mb: 2.5, borderRadius: 3, border: '1px solid #333' }}>
+                <form onSubmit={handleAddItem}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Autocomplete
+                        freeSolo
+                        options={historySuggestions}
+                        value={itemName}
+                        onInputChange={(e, newValue) => setItemName(newValue)}
+                        slotProps={{ listbox: { dir: 'rtl' } }}
+                        sx={{ flexGrow: 1 }}
+                        renderInput={(params) => (
+                          <TextField {...params} label="מה להוסיף לרשימה?" variant="outlined" size="small" required />
+                        )}
+                      />
+                      <TextField
+                        label="כמות"
+                        type="number"
+                        size="small"
+                        value={quantity}
+                        onChange={(e) => setQuantity(e.target.value)}
+                        slotProps={{ htmlInput: { min: 1 } }}
+                        sx={{ width: '70px' }}
+                      />
+                    </Box>
 
-            <Paper elevation={2} sx={{ p: 2, mb: 2.5, borderRadius: 3, border: '1px solid #333' }}>
-              <form onSubmit={handleAddItem}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Autocomplete
-                      freeSolo
-                      options={historySuggestions}
-                      value={itemName}
-                      onInputChange={(e, newValue) => setItemName(newValue)}
-                      slotProps={{ listbox: { dir: 'rtl' } }}
-                      sx={{ flexGrow: 1 }}
-                      renderInput={(params) => (
-                        <TextField {...params} label="מה להוסיף לרשימה?" variant="outlined" size="small" required />
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                      {!isAddingCustomCategory ? (
+                        <FormControl fullWidth size="small">
+                          <InputLabel id="cat-label">קטגוריה</InputLabel>
+                          <Select labelId="cat-label" value={category} MenuProps={{ dir: 'rtl' }} label="קטגוריה" onChange={(e) => e.target.value === 'NEW' ? setIsAddingCustomCategory(true) : setCategory(e.target.value)}>
+                            {categories.map((cat) => <MenuItem key={cat} value={cat}>{cat}</MenuItem>)}
+                            <Divider />
+                            <MenuItem value="NEW" sx={{ color: 'primary.main', fontWeight: 'bold' }}>+ קטגוריה חדשה</MenuItem>
+                          </Select>
+                        </FormControl>
+                      ) : (
+                        <TextField label="שם הקטגוריה" size="small" fullWidth value={customCategory} onChange={(e) => setCustomCategory(e.target.value)} />
                       )}
-                    />
-                    <TextField
-                      label="כמות"
-                      type="number"
-                      size="small"
-                      value={quantity}
-                      onChange={(e) => setQuantity(e.target.value)}
-                      slotProps={{ htmlInput: { min: 1 } }}
-                      sx={{ width: '70px' }}
-                    />
+
+                      <input
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        id="icon-button-file"
+                        type="file"
+                        onChange={(e) => setImageFile(e.target.files[0])}
+                      />
+                      <label htmlFor="icon-button-file">
+                        <IconButton color={imageFile ? "primary" : "secondary"} component="span" sx={{ border: '1px solid #333', borderRadius: 2 }}>
+                          <FaCamera size={18} />
+                        </IconButton>
+                      </label>
+
+                      <Button type="submit" variant="contained" color="primary" disabled={isUploading} sx={{ px: 3, fontWeight: 'bold', minWidth: '90px', borderRadius: 2 }}>
+                        {isUploading ? <CircularProgress size={24} color="inherit" /> : 'הוסף'}
+                      </Button>
+                    </Box>
+                    {imageFile && <Typography variant="caption" color="primary">✓ נבחרה תמונה: {imageFile.name}</Typography>}
                   </Box>
+                </form>
+              </Paper>
 
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                    {!isAddingCustomCategory ? (
-                      <FormControl fullWidth size="small">
-                        <InputLabel id="cat-label">קטגוריה</InputLabel>
-                        <Select labelId="cat-label" value={category} MenuProps={{ dir: 'rtl' }} label="קטגוריה" onChange={(e) => e.target.value === 'NEW' ? setIsAddingCustomCategory(true) : setCategory(e.target.value)}>
-                          {categories.map((cat) => <MenuItem key={cat} value={cat}>{cat}</MenuItem>)}
-                          <Divider />
-                          <MenuItem value="NEW" sx={{ color: 'primary.main', fontWeight: 'bold' }}>+ קטגוריה חדשה</MenuItem>
-                        </Select>
-                      </FormControl>
-                    ) : (
-                      <TextField label="שם הקטגוריה" size="small" fullWidth value={customCategory} onChange={(e) => setCustomCategory(e.target.value)} />
-                    )}
+              <Paper sx={{ mb: 2, borderRadius: 2, bgcolor: '#1e1e1e', border: '1px solid #333' }}>
+                <Tabs value={activeTab} onChange={(e, val) => setActiveTab(val)} variant="fullWidth" textColor="primary" indicatorColor="primary">
+                  <Tab 
+                    icon={<Badge badgeContent={activeItems.length} color="primary"><FaShoppingCart size={20} /></Badge>} 
+                    iconPosition="start" 
+                    label="לקנות" 
+                    sx={{ minHeight: '60px' }}
+                  />
+                  <Tab icon={<FaStar size={18} color="#ffb74d" />} iconPosition="start" label="נפוצים" sx={{ minHeight: '60px' }} />
+                  <Tab icon={<FaHistory size={18} />} iconPosition="start" label="נקנו" sx={{ minHeight: '60px' }} />
+                </Tabs>
+              </Paper>
 
-                    {/* כפתור העלאת תמונה */}
-                    <input
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      id="icon-button-file"
-                      type="file"
-                      onChange={(e) => setImageFile(e.target.files[0])}
-                    />
-                    <label htmlFor="icon-button-file">
-                      <IconButton color={imageFile ? "primary" : "secondary"} component="span" sx={{ border: '1px solid #333', borderRadius: 2 }}>
-                        <FaCamera size={18} />
-                      </IconButton>
-                    </label>
+              {activeTab === 0 && (
+                <Box>
+                  {activeItems.length === 0 ? (
+                    <Paper sx={{ p: 3, textAlign: 'center', borderRadius: 3, bgcolor: '#1e1e1e', border: '1px solid #333' }}><Typography color="text.secondary" variant="body2">הרשימה ריקה</Typography></Paper>
+                  ) : (
+                    categories.map((cat) => {
+                      const catItems = activeItems.filter((i) => i.category === cat);
+                      if (catItems.length === 0) return null;
+                      return (
+                        <Accordion defaultExpanded key={cat} sx={{ mb: 1.5, bgcolor: '#1e1e1e', borderRadius: '8px !important', border: '1px solid #333' }}>
+                          <AccordionSummary expandIcon={<MdExpandMore />}>
+                            <Typography variant="subtitle1" sx={{ color: 'primary.main', fontWeight: 'bold' }}>{cat} ({catItems.length})</Typography>
+                          </AccordionSummary>
+                          <AccordionDetails sx={{ p: 0 }}>
+                            <List disablePadding>
+                              {catItems.map((item) => (
+                                <ListItem key={item.id} divider sx={{ display: 'flex', justifyContent: 'space-between', px: 2, py: 1 }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Checkbox edge="start" checked={item.bought} onChange={() => toggleBought(item)} color="secondary" size="small" />
+                                    <ListItemText 
+                                      primary={item.quantity > 1 ? `${item.name} (${item.quantity})` : item.name} 
+                                      slotProps={{ primary: { sx: { fontSize: '1rem' } } }}
+                                    />
+                                  </Box>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                    {item.imageUrl && (
+                                      <IconButton size="small" color="primary" onClick={() => setViewImage(item.imageUrl)}>
+                                        <FaImage size={18} />
+                                      </IconButton>
+                                    )}
+                                    <IconButton edge="end" onClick={() => handleDelete(item.id)} color="error" size="small"><FaTrash size={14} /></IconButton>
+                                  </Box>
+                                </ListItem>
+                              ))}
+                            </List>
+                          </AccordionDetails>
+                        </Accordion>
+                      );
+                    })
+                  )}
+                </Box>
+              )}
 
-                    <Button type="submit" variant="contained" color="primary" disabled={isUploading} sx={{ px: 3, fontWeight: 'bold', minWidth: '90px', borderRadius: 2 }}>
-                      {isUploading ? <CircularProgress size={24} color="inherit" /> : 'הוסף'}
-                    </Button>
+              {activeTab === 1 && (
+                <Paper sx={{ p: 2.5, borderRadius: 3, bgcolor: '#1e1e1e', border: '1px solid #333' }}>
+                  <Typography variant="subtitle1" sx={{ mb: 2, color: 'primary.main', fontWeight: 'bold' }}>מוצרים שנקנים בתדירות גבוהה</Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {frequentItems.map((freq) => {
+                      const isAlreadyActive = activeItems.some(i => i.name.trim().toLowerCase() === freq.name.toLowerCase());
+                      return (
+                        <Chip key={freq.name} label={`${freq.name} (${freq.category})`} onClick={() => { if (!isAlreadyActive) { setItemName(freq.name); setCategory(freq.category); setActiveTab(0); } }} color={isAlreadyActive ? 'default' : 'primary'} variant={isAlreadyActive ? 'outlined' : 'filled'} icon={<FaPlus size={12} />} sx={{ cursor: 'pointer' }} />
+                      );
+                    })}
                   </Box>
-                  {imageFile && <Typography variant="caption" color="primary">✓ נבחרה תמונה: {imageFile.name}</Typography>}
-                </Box>
-              </form>
-            </Paper>
+                </Paper>
+              )}
 
-            <Paper sx={{ mb: 2, borderRadius: 2, bgcolor: '#1e1e1e', border: '1px solid #333' }}>
-              <Tabs value={activeTab} onChange={(e, val) => setActiveTab(val)} variant="fullWidth" textColor="primary" indicatorColor="primary">
-                {/* התיקון של העגלה עם המספר יושב כאן */}
-                <Tab
-                  icon={<Badge badgeContent={activeItems.length} color="primary"><FaShoppingCart size={20} /></Badge>}
-                  iconPosition="start"
-                  label="לקנות"
-                  sx={{ minHeight: '60px' }}
-                />
-                <Tab icon={<FaStar size={18} color="#ffb74d" />} iconPosition="start" label="נפוצים" sx={{ minHeight: '60px' }} />
-                <Tab icon={<FaHistory size={18} />} iconPosition="start" label="נקנו" sx={{ minHeight: '60px' }} />
-              </Tabs>
-            </Paper>
+              {activeTab === 2 && (
+                <Paper sx={{ p: 2.5, borderRadius: 3, bgcolor: '#1e1e1e', border: '1px solid #333' }}>
+                  <Typography variant="subtitle1" sx={{ mb: 2, color: 'secondary.main', fontWeight: 'bold' }}>נקנו לאחרונה</Typography>
+                  <List disablePadding>
+                    {boughtItems.map((item) => (
+                      <ListItem key={item.id} divider sx={{ display: 'flex', justifyContent: 'space-between', px: 1, py: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Checkbox edge="start" checked={item.bought} onChange={() => toggleBought(item)} color="secondary" size="small" />
+                          <ListItemText primary={item.name} secondary={`קטגוריה: ${item.category}`} sx={{ textDecoration: 'line-through', opacity: 0.6 }} />
+                        </Box>
+                        <IconButton edge="end" onClick={() => handleDelete(item.id)} color="error" size="small"><FaTrash size={14} /></IconButton>
+                      </ListItem>
+                    ))}
+                  </List>
+                </Paper>
+              )}
 
-            {activeTab === 0 && (
-              <Box>
-                {activeItems.length === 0 ? (
-                  <Paper sx={{ p: 3, textAlign: 'center', borderRadius: 3, bgcolor: '#1e1e1e', border: '1px solid #333' }}><Typography color="text.secondary" variant="body2">הרשימה ריקה</Typography></Paper>
-                ) : (
-                  categories.map((cat) => {
-                    const catItems = activeItems.filter((i) => i.category === cat);
-                    if (catItems.length === 0) return null;
-                    return (
-                      <Accordion defaultExpanded key={cat} sx={{ mb: 1.5, bgcolor: '#1e1e1e', borderRadius: '8px !important', border: '1px solid #333' }}>
-                        <AccordionSummary expandIcon={<MdExpandMore />}>
-                          <Typography variant="subtitle1" sx={{ color: 'primary.main', fontWeight: 'bold' }}>{cat} ({catItems.length})</Typography>
-                        </AccordionSummary>
-                        <AccordionDetails sx={{ p: 0 }}>
-                          <List disablePadding>
-                            {catItems.map((item) => (
-                              <ListItem key={item.id} divider sx={{ display: 'flex', justifyContent: 'space-between', px: 2, py: 1 }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                  <Checkbox edge="start" checked={item.bought} onChange={() => toggleBought(item)} color="secondary" size="small" />
-                                  <ListItemText
-                                    primary={item.quantity > 1 ? `${item.name} (${item.quantity})` : item.name}
-                                    slotProps={{ primary: { sx: { fontSize: '1rem' } } }}
-                                  />
-                                </Box>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                  {item.imageUrl && (
-                                    <IconButton size="small" color="primary" onClick={() => setViewImage(item.imageUrl)}>
-                                      <FaImage size={18} />
-                                    </IconButton>
-                                  )}
-                                  <IconButton edge="end" onClick={() => handleDelete(item.id)} color="error" size="small"><FaTrash size={14} /></IconButton>
-                                </Box>
-                              </ListItem>
-                            ))}
-                          </List>
-                        </AccordionDetails>
-                      </Accordion>
-                    );
-                  })
-                )}
-              </Box>
-            )}
-
-            {/* לשונית 1: נפוצים */}
-            {activeTab === 1 && (
-              <Paper sx={{ p: 2.5, borderRadius: 3, bgcolor: '#1e1e1e', border: '1px solid #333' }}>
-                <Typography variant="subtitle1" sx={{ mb: 2, color: 'primary.main', fontWeight: 'bold' }}>מוצרים שנקנים בתדירות גבוהה</Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  {frequentItems.map((freq) => {
-                    const isAlreadyActive = activeItems.some(i => i.name.trim().toLowerCase() === freq.name.toLowerCase());
-                    return (
-                      <Chip key={freq.name} label={`${freq.name} (${freq.category})`} onClick={() => { if (!isAlreadyActive) { setItemName(freq.name); setCategory(freq.category); setActiveTab(0); } }} color={isAlreadyActive ? 'default' : 'primary'} variant={isAlreadyActive ? 'outlined' : 'filled'} icon={<FaPlus size={12} />} sx={{ cursor: 'pointer' }} />
-                    );
-                  })}
-                </Box>
-              </Paper>
-            )}
-
-            {/* לשונית 2: נקנו */}
-            {activeTab === 2 && (
-              <Paper sx={{ p: 2.5, borderRadius: 3, bgcolor: '#1e1e1e', border: '1px solid #333' }}>
-                <Typography variant="subtitle1" sx={{ mb: 2, color: 'secondary.main', fontWeight: 'bold' }}>נקנו לאחרונה</Typography>
-                <List disablePadding>
-                  {boughtItems.map((item) => (
-                    <ListItem key={item.id} divider sx={{ display: 'flex', justifyContent: 'space-between', px: 1, py: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Checkbox edge="start" checked={item.bought} onChange={() => toggleBought(item)} color="secondary" size="small" />
-                        <ListItemText primary={item.name} secondary={`קטגוריה: ${item.category}`} sx={{ textDecoration: 'line-through', opacity: 0.6 }} />
-                      </Box>
-                      <IconButton edge="end" onClick={() => handleDelete(item.id)} color="error" size="small"><FaTrash size={14} /></IconButton>
-                    </ListItem>
-                  ))}
-                </List>
-              </Paper>
-            )}
-
-            {/* חלונית הצגת תמונה */}
-            <Dialog open={!!viewImage} onClose={() => setViewImage(null)} maxWidth="sm" fullWidth>
-              <DialogContent sx={{ p: 0, bgcolor: '#000', display: 'flex', justifyContent: 'center' }}>
-                {viewImage && <img src={viewImage} alt="מוצר" style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain' }} />}
-              </DialogContent>
-            </Dialog>
-
-          </Container>
-        </Box>
+              <Dialog open={!!viewImage} onClose={() => setViewImage(null)} maxWidth="sm" fullWidth>
+                <DialogContent sx={{ p: 0, bgcolor: '#000', display: 'flex', justifyContent: 'center' }}>
+                  {viewImage && <img src={viewImage} alt="מוצר" style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain' }} />}
+                </DialogContent>
+              </Dialog>
+              
+            </Container>
+          </Box>
+        )}
       </ThemeProvider>
     </CacheProvider>
   );
