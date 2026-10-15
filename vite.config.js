@@ -11,7 +11,7 @@ export default defineConfig({
       includeAssets: ['favicon.png', 'icon-192.png', 'icon-512.png'],
       manifest: {
         name: 'קופץ לסופר',
-        short_name: 'לסופר',
+        short_name: 'קופץ לסופר',
         description: 'רשימת קניות משפחתית רספונסיבית',
         theme_color: '#121212',
         background_color: '#121212',
