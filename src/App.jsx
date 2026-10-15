@@ -42,6 +42,13 @@ const theme = createTheme({
 const DEFAULT_CATEGORIES = ['ירקות ופירות', 'מוצרי מקרר', 'מעדנייה', 'מוצרים יבשים', 'מוצרים קפואים', 'אחר'];
 
 export default function App() {
+  const FAMILY_PASSWORD = "תקווה"; // הסיסמה
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    // בודק אם כבר התחברנו בעבר באותו טלפון
+    return localStorage.getItem('kofetz-logged-in') === 'true';
+  });
+  const [passwordInput, setPasswordInput] = useState('');
+  const [loginError, setLoginError] = useState(false);
   const [items, setItems] = useState([]);
   const [itemName, setItemName] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -153,6 +160,44 @@ export default function App() {
 
   const activeItems = items.filter((i) => !i.bought);
   const boughtItems = items.filter((i) => i.bought);
+
+  // --- מסך הכניסה ---
+  if (!isLoggedIn) {
+    return (
+      <CacheProvider value={cacheRtl}>
+        <ThemeProvider theme={theme}>
+          <Box dir="rtl" sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'background.default', p: 2 }}>
+            <Paper elevation={4} sx={{ p: 4, borderRadius: 3, textAlign: 'center', bgcolor: '#1e1e1e', border: '1px solid #333', maxWidth: '400px', width: '100%' }}>
+              <FaCat size={40} color="#ffb74d" style={{ marginBottom: '16px' }} />
+              <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#ffb74d', mb: 1 }}>
+                קופץ לסופר
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                האפליקציה סגורה למשפחה בלבד. אנא הזינו את הסיסמה.
+              </Typography>
+              <form onSubmit={handleLogin}>
+                <TextField
+                  fullWidth
+                  label="סיסמה"
+                  type="password"
+                  variant="outlined"
+                  value={passwordInput}
+                  onChange={(e) => { setPasswordInput(e.target.value); setLoginError(false); }}
+                  error={loginError}
+                  helperText={loginError ? "סיסמה שגויה, נסו שוב 🐾" : ""}
+                  sx={{ mb: 3 }}
+                />
+                <Button type="submit" fullWidth variant="contained" color="primary" sx={{ py: 1.5, fontWeight: 'bold', fontSize: '1.1rem' }}>
+                  כניסה
+                </Button>
+              </form>
+            </Paper>
+          </Box>
+        </ThemeProvider>
+      </CacheProvider>
+    );
+  }
+  // --- סוף מסך הכניסה ---
 
   return (
     <CacheProvider value={cacheRtl}>
